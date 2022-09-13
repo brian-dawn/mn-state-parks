@@ -1,16 +1,16 @@
 use anyhow::Result;
 
-pub mod campsite;
+pub mod api;
 
 
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let resp_parks = campsite::fetch_parks().await?;
+    let resp_parks = api::fetch_parks().await?;
 
     println!("{:#?}", resp_parks);
 
-    let resp = campsite::fetch().await?;
+    let resp = api::fetch().await?;
 
     println!("{:#?}", resp);
 
