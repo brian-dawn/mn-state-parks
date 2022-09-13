@@ -1,7 +1,32 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer};
 use anyhow::Result;
+
+
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "PascalCase")]
+pub enum EntityType {
+    City,
+    Park
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct StatePark {
+pub  city_park_id: i32,
+pub  enterprise_id: i32,
+pub  entity_type: Option<EntityType>,
+pub  is_active: bool,
+pub  latitude: f64,
+pub  longitude: f64,
+pub  name: String,
+ pub  place_id: u32,
+ pub park_size: String // NOTE: this should be an enum but I got mad that there's case insensitivity happening. small, Small, etc.
+
+}
+
+
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "PascalCase")]
@@ -61,6 +86,22 @@ pub struct Slice {
 }
 
 
+pub async fn fetch_parks() -> Result<Vec<StatePark>> {
+
+
+    let url = "https://mnrdr.usedirect.com/minnesotardr/rdr/fd/citypark";
+    let resp = reqwest::Client::new()
+    .get(url)
+    .send()
+    .await?
+        .json::<HashMap<String, StatePark>>()
+        .await?;
+
+        Ok(resp.values()
+        // Only show parks, not cities.
+        .filter(|park| park.entity_type == Some(EntityType::Park))
+        .cloned().collect())
+}
 
 pub async fn fetch() -> Result<Response> {
 
