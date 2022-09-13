@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use anyhow::Result;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -55,7 +55,7 @@ pub struct PlaceFacility {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
-pub struct Response {
+pub struct GridFacility {
     pub facility: Facility,
 }
 
@@ -100,7 +100,7 @@ pub async fn fetch_parks() -> Result<Vec<StatePark>> {
         .collect())
 }
 
-pub async fn fetch_place() -> Result<Place> {
+pub async fn fetch_place(place_id: &str) -> Result<Place> {
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "PascalCase")]
     struct Grid {
@@ -129,7 +129,7 @@ pub async fn fetch_place() -> Result<Place> {
     }
 
     let json = Grid {
-        place_id: "117".to_string(),
+        place_id: place_id.to_string(),
         latitude: 0.0,
         longitude: 0.0,
         highlighted_place_id: 0,
@@ -161,7 +161,7 @@ pub async fn fetch_place() -> Result<Place> {
     // From a place we get facilities and that's how we fetch campsites.
 }
 
-pub async fn fetch() -> Result<Response> {
+pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "PascalCase")]
     pub struct Request {
@@ -183,7 +183,7 @@ pub async fn fetch() -> Result<Response> {
     }
 
     let json = Request {
-        facility_id: "788".to_string(),
+        facility_id: facility_id.to_string(),
         unit_type_id: 0,
         start_date: "9-20-2022".to_string(),
         in_season_only: true,
@@ -203,25 +203,30 @@ pub async fn fetch() -> Result<Response> {
         .json(&json)
         .send()
         .await?
-        .json::<Response>()
+        .json::<GridFacility>()
         .await?;
 
     Ok(resp)
 }
 
-pub async fn fetch_all_campsites() -> Result<Vec<Campsite>> {
-    let mut campsites = vec![];
+pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
+    let parks = fetch_parks().await?;
+    for park in parks.iter() {
+        println!("fetching {}", park.name);
 
-    let places = fetch_places().await?;
-    for place in places {
-        let facilities = fetch_facilities(place.place_id).await?;
-        for facility in facilities {
-            let campsites = fetch_campsites(facility.facility_id).await?;
-            for campsite in campsites {
-                campsites.push(campsite);
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        let place = fetch_place(park.place_id.to_string().as_str()).await?;
+
+        for facility in place.selected_place.facilities.values() {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            println!("\tfetching {}", facility.name);
+            let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
+
+            for unit in grid.facility.units.values() {
+                println!("\t\t{}", unit.name);
             }
         }
     }
 
-    Ok(campsites)
+    todo!("fetch all campsites")
 }
