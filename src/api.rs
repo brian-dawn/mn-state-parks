@@ -1,8 +1,14 @@
-use std::{collections::HashMap, time::Duration};
+use std::{collections::HashMap, time::Duration, any::Any};
 
 use anyhow::Result;
 use serde::{Deserialize, Deserializer, Serialize};
 
+
+pub enum UnitType {
+    Backpacking = 177,
+    BikeIn = 176,
+    CartIn = 165
+}
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
 pub enum EntityType {
@@ -77,7 +83,7 @@ pub struct Unit {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "PascalCase")]
 pub struct Slice {
-    date: String, // yyyy-mm-dd
+    date: chrono::NaiveDate, // yyyy-mm-dd
 
     is_free: bool,
     min_stay: u32,
@@ -185,13 +191,13 @@ pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
     let json = Request {
         facility_id: facility_id.to_string(),
         unit_type_id: 0,
-        start_date: "9-20-2022".to_string(),
+        start_date: "9-13-2022".to_string(),
         in_season_only: true,
         web_only: true,
         is_ada: false,
         unit_category_id: "25".to_string(),
         sleeping_unit_id: "31".to_string(),
-        unit_types_group_ids: vec!["25".to_string()],
+        unit_types_group_ids: vec![],
         min_date: "9/13/2022".to_string(),
         max_date: "1/11/2023".to_string(),
         min_vehicle_length: 0,
@@ -210,12 +216,14 @@ pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
 }
 
 pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
-    let parks = fetch_parks().await?;
-    for park in parks.iter() {
-        println!("fetching {}", park.name);
+    //let parks = fetch_parks().await?;
+    //for park in parks.iter() {
+    //    println!("fetching {} (id={})", park.name, park.place_id);
 
         tokio::time::sleep(Duration::from_millis(100)).await;
-        let place = fetch_place(park.place_id.to_string().as_str()).await?;
+        //let place = fetch_place(park.place_id.to_string().as_str()).await?;
+        let place = fetch_place("70").await?;
+
 
         for facility in place.selected_place.facilities.values() {
             tokio::time::sleep(Duration::from_millis(100)).await;
@@ -223,10 +231,17 @@ pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
             let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
 
             for unit in grid.facility.units.values() {
-                println!("\t\t{}", unit.name);
+                println!("\t\t{} - {}", unit.name, unit.short_name);
+
+                let mut slices = unit.slices.values().collect::<Vec<_>>();
+                slices.sort_by(|a, b| a.date.cmp(&b.date));
+
+                for slice in slices {
+                    println!("\t\t\t{} - {}", slice.date, if slice.is_free { "available" } else { "reserved" });
+                }
             }
         }
-    }
+    //}
 
     todo!("fetch all campsites")
 }
