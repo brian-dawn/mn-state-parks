@@ -216,13 +216,13 @@ pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
 }
 
 pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
-    //let parks = fetch_parks().await?;
-    //for park in parks.iter() {
-    //    println!("fetching {} (id={})", park.name, park.place_id);
+    let parks = fetch_parks().await?;
+    for park in parks.iter() {
+        println!("fetching {} (id={})", park.name, park.place_id);
 
         tokio::time::sleep(Duration::from_millis(100)).await;
-        //let place = fetch_place(park.place_id.to_string().as_str()).await?;
-        let place = fetch_place("70").await?;
+        let place = fetch_place(park.place_id.to_string().as_str()).await?;
+        //let place = fetch_place("70").await?;
 
 
         for facility in place.selected_place.facilities.values() {
@@ -231,8 +231,15 @@ pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
             let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
 
             for unit in grid.facility.units.values() {
+
+                // Only show backpacking sites.
+                if !unit.name.to_ascii_lowercase().contains("backpack") {
+                    continue
+                }
+
                 println!("\t\t{} - {}", unit.name, unit.short_name);
 
+                // Sort the slices by date.
                 let mut slices = unit.slices.values().collect::<Vec<_>>();
                 slices.sort_by(|a, b| a.date.cmp(&b.date));
 
@@ -241,7 +248,7 @@ pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
                 }
             }
         }
-    //}
+    }
 
     todo!("fetch all campsites")
 }
