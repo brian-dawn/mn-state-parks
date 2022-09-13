@@ -6,13 +6,15 @@ pub mod api;
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let resp_parks = api::fetch_parks().await?;
+    let resp_place = api::fetch_place().await?;
+    println!("{:#?}", resp_place);
+    // let resp_parks = api::fetch_parks().await?;
 
-    println!("{:#?}", resp_parks);
+    // println!("{:#?}", resp_parks);
 
-    let resp = api::fetch().await?;
+    // let resp = api::fetch().await?;
 
-    println!("{:#?}", resp);
+    // println!("{:#?}", resp);
 
     Ok(())
 }
