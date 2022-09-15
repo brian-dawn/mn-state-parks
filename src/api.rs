@@ -243,8 +243,8 @@ pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
                 let mut slices = unit.slices.values().collect::<Vec<_>>();
                 slices.sort_by(|a, b| a.date.cmp(&b.date));
 
-                for slice in slices {
-                    println!("\t\t\t{} - {}", slice.date, if slice.is_free { "available" } else { "reserved" });
+                for slice in slices.iter().filter(|slice| slice.is_free) {
+                    println!("\t\t\t{}", slice.date);
                 }
             }
         }
