@@ -53,11 +53,11 @@ jobs:
       - run: target/release/mn-park-scraper > public/index.html
       - run: tar czf artifact.tar public/
  
-      - name: Upload artifact
-        uses: actions/upload-artifact@main
-        with:
-          name: github-pages
-          path: ${{ runner.temp }}/artifact.tar
+#       - name: Upload artifact
+#         uses: actions/upload-artifact@main
+#         with:
+#           name: github-pages
+#           path: ${{ runner.temp }}/artifact.tar
 
       - run: ls -lha
 
