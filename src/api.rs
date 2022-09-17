@@ -1,13 +1,13 @@
-use std::{collections::HashMap, time::Duration, any::Any};
+use std::{any::Any, collections::HashMap, time::Duration};
 
 use anyhow::Result;
+use chrono::Datelike;
 use serde::{Deserialize, Deserializer, Serialize};
-
 
 pub enum UnitType {
     Backpacking = 177,
     BikeIn = 176,
-    CartIn = 165
+    CartIn = 165,
 }
 #[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
 #[serde(rename_all = "PascalCase")]
@@ -71,7 +71,7 @@ pub struct Facility {
     pub units: HashMap<String, Unit>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "PascalCase")]
 pub struct Unit {
     unit_id: i32,
@@ -80,13 +80,13 @@ pub struct Unit {
     slices: HashMap<String, Slice>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone, Serialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Slice {
-    date: chrono::NaiveDate, // yyyy-mm-dd
+    pub date: chrono::NaiveDate, // yyyy-mm-dd
 
-    is_free: bool,
-    min_stay: u32,
+    pub is_free: bool,
+    pub min_stay: u32,
 }
 
 pub async fn fetch_parks() -> Result<Vec<StatePark>> {
@@ -106,7 +106,7 @@ pub async fn fetch_parks() -> Result<Vec<StatePark>> {
         .collect())
 }
 
-pub async fn fetch_place(place_id: &str) -> Result<Place> {
+pub async fn fetch_place(place_id: &str) -> Result<Option<Place>> {
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "PascalCase")]
     struct Grid {
@@ -161,13 +161,14 @@ pub async fn fetch_place(place_id: &str) -> Result<Place> {
 
     let resp = reqwest::Client::new().post(url).json(&json).send().await?;
 
-    let resp_body = resp.json::<Place>().await?;
+    // TODO: Need to return optional, investigate why sometimes json is bad.
+    let resp_body = resp.json::<Place>().await.ok();
 
     Ok(resp_body)
     // From a place we get facilities and that's how we fetch campsites.
 }
 
-pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
+pub async fn fetch_facility(facility_id: &str) -> Result<Option<GridFacility>> {
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "PascalCase")]
     pub struct Request {
@@ -188,10 +189,12 @@ pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
         pub min_vehicle_length: u32,
     }
 
+    let now = chrono::offset::Utc::now();
+
     let json = Request {
         facility_id: facility_id.to_string(),
         unit_type_id: 0,
-        start_date: "9-13-2022".to_string(),
+        start_date: format!("{}-{}-{}", now.month(), now.day(), now.year()),
         in_season_only: true,
         web_only: true,
         is_ada: false,
@@ -210,45 +213,82 @@ pub async fn fetch_facility(facility_id: &str) -> Result<GridFacility> {
         .send()
         .await?
         .json::<GridFacility>()
-        .await?;
+        .await
+        .ok(); // Some responses are empty/bad json. TODO: investigate later.
 
     Ok(resp)
 }
 
-pub async fn fetch_all_campsites() -> Result<Vec<GridFacility>> {
+/// The public API for this module, contains all the info we need to later render the template.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedPark {
+    pub name: String,
+    pub latitude: f64,
+    pub longitude: f64,
+    pub units: Vec<ParsedUnit>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParsedUnit {
+    pub name: String,
+    pub short_name: String,
+    pub slices: Vec<Slice>,
+}
+
+pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
+    let mut out = Vec::new();
+
     let parks = fetch_parks().await?;
     for park in parks.iter() {
-        println!("fetching {} (id={})", park.name, park.place_id);
+        eprintln!("fetching {} (id={})", park.name, park.place_id);
+
+        let mut units = Vec::new();
 
         tokio::time::sleep(Duration::from_millis(100)).await;
         let place = fetch_place(park.place_id.to_string().as_str()).await?;
-        //let place = fetch_place("70").await?;
 
+        if let Some(place) = place {
+            for facility in place.selected_place.facilities.values() {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                eprintln!("\tfetching {}", facility.name);
+                let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
 
-        for facility in place.selected_place.facilities.values() {
-            tokio::time::sleep(Duration::from_millis(100)).await;
-            println!("\tfetching {}", facility.name);
-            let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
+                if let Some(grid) = grid {
+                    for unit in grid.facility.units.values() {
+                        // Only show backpacking sites.
+                        if !unit.name.to_ascii_lowercase().contains("backpack") {
+                            continue;
+                        }
 
-            for unit in grid.facility.units.values() {
+                        eprintln!("\t\t{} - {}", unit.name, unit.short_name);
 
-                // Only show backpacking sites.
-                if !unit.name.to_ascii_lowercase().contains("backpack") {
-                    continue
-                }
+                        // Sort the slices by date.
+                        let mut slices =
+                            unit.slices.values().map(|i| i.clone()).collect::<Vec<_>>();
+                        slices.sort_by(|a, b| a.date.cmp(&b.date));
 
-                println!("\t\t{} - {}", unit.name, unit.short_name);
-
-                // Sort the slices by date.
-                let mut slices = unit.slices.values().collect::<Vec<_>>();
-                slices.sort_by(|a, b| a.date.cmp(&b.date));
-
-                for slice in slices.iter().filter(|slice| slice.is_free) {
-                    println!("\t\t\t{}", slice.date);
+                        units.push(ParsedUnit {
+                            name: unit.name.clone(),
+                            short_name: unit.short_name.clone(),
+                            slices: slices,
+                        });
+                    }
                 }
             }
         }
+
+        let parsed_park = ParsedPark {
+            name: park.name.clone(),
+            latitude: park.latitude,
+            longitude: park.longitude,
+            units: units,
+        };
+
+        // Only add parks with campsites.
+        if parsed_park.units.len() > 0 {
+            out.push(parsed_park);
+        }
     }
 
-    todo!("fetch all campsites")
+    return Ok(out);
 }
