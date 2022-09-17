@@ -1,4 +1,9 @@
-on: push
+on: 
+  push:
+  schedule:
+    # Every month to ensure the artifact stays fresh.
+    - cron: 0 0 1 * *
+
 name: build the artifact
 jobs:
   build:
