@@ -5,6 +5,10 @@ on:
     - cron: 0 11 * * *
 
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Compile"]
+    types:
+      - completed
 
 name: Render the Page
 jobs:
