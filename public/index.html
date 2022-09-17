@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              avacado: "#87a922",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background-color: #041c15;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      style="background-color: #efd7c2"
+      class="max-w-7xl w-full h-screen mr-auto ml-auto"
+    >
+      <div
+        class="w-full bg-cover bg-center"
+        style="height: 32rem; background-image: url(/lightbanner.jpg)"
+      >
+        <div class="flex items-center justify-center h-full w-full"></div>
+      </div>
+
+      <div class="h-2 bg-gradient-to-r from-blue-500 to-green-500"></div>
+
+      <div class="p-6">
+        <table class="table-fixed w-full">
+          <thead>
+            <tr>
+              <th class="p-2">Site</th>
+              <th class="p-2">9/16</th>
+              <th class="p-2">9/17</th>
+              <th class="p-2">9/18</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="w-4">BP3</td>
+              <td class="w-4"></td>
+              <td class="bg-avacado w-4"></td>
+              <td class="bg-avacado w-4"></td>
+            </tr>
+            <tr>
+              <td class="w-4">BP7</td>
+              <td class="bg-avacado w-4"></td>
+              <td class="w-4"></td>
+              <td class="w-4"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="container mx-auto justify-center padding px-8 py-6">
+          <p class="text-lg font-bold">George Crosby Manitou</p>
+          <div class="grid grid-cols-4 gap-1">
+            <div>09/16/2022</div>
+            <div>09/16/2022</div>
+            <div>09/16/2022</div>
+            <button type="button" class="bg-indigo-500 ..." disabled></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
