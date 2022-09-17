@@ -2,6 +2,7 @@ use std::{any::Any, collections::HashMap, time::Duration};
 
 use anyhow::Result;
 use chrono::Datelike;
+use rand::Rng;
 use serde::{Deserialize, Deserializer, Serialize};
 
 pub enum UnitType {
@@ -235,6 +236,13 @@ pub struct ParsedUnit {
     pub slices: Vec<Slice>,
 }
 
+pub async fn delay_requests() {
+    // Delay requests to avoid getting rate limited.
+    // Add a random delay.
+    let random_ms = rand::thread_rng().gen_range(0..1000);
+    tokio::time::sleep(std::time::Duration::from_millis(3000 + random_ms)).await;
+}
+
 pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
     let mut out = Vec::new();
 
@@ -244,12 +252,15 @@ pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
 
         let mut units = Vec::new();
 
-        tokio::time::sleep(Duration::from_millis(100)).await;
+        delay_requests().await;
         let place = fetch_place(park.place_id.to_string().as_str()).await?;
 
         if let Some(place) = place {
             for facility in place.selected_place.facilities.values() {
-                tokio::time::sleep(Duration::from_millis(100)).await;
+
+
+        delay_requests().await;
+
                 eprintln!("\tfetching {}", facility.name);
                 let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;
 
