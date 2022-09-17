@@ -4,6 +4,8 @@ on:
     # Every day at 11 GMT
     - cron: 0 11 * * *
 
+  workflow_dispatch:
+
 name: Render the page
 jobs:
 
