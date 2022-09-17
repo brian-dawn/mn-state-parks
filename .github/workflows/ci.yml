@@ -4,7 +4,7 @@ jobs:
   build:
     name: Deploy
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     steps:
 
       - uses: actions/checkout@v3
@@ -29,21 +29,29 @@ jobs:
 
 #       - run: git checkout HEAD^
 #       - run: cargo run > public/index.html
-#       - run: tar czf artifact.tar public/
-# 
-#       - name: Upload artifact
-#         uses: actions/upload-artifact@main
-#         with:
-#           name: github-pages
-#           path: ${{ runner.temp }}/artifact.tar
 
 
 
-#   render:
-#     name: Render
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/download-artifact@master
-#         with:
-#           name: mn-parks
-#           path: mn-parks
+
+
+
+
+
+
+
+  render:
+    name: Render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: mn-parks
+          path: mn-parks
+      - run: target/release/mn-park-scraper > public/index.html
+      - run: tar czf artifact.tar public/
+ 
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
