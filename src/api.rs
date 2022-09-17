@@ -298,6 +298,7 @@ pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
         // Only add parks with campsites.
         if parsed_park.units.len() > 0 {
             out.push(parsed_park);
+            break; // TODO: remove
         }
     }
 

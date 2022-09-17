@@ -2,7 +2,7 @@ on: push
 name: build and deploy pages
 jobs:
   build:
-    name: Deploy
+    name: Build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -38,9 +38,10 @@ jobs:
 
 
 
-
   render:
     name: Render
+
+    # if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: dawidd6/action-download-artifact@v2
@@ -48,7 +49,6 @@ jobs:
           name: mn-parks
           check_artifacts: true
           search_artifacts: true
-      - run: ls -lha
       - run: chmod +x target/release/mn-park-scraper
       - run: target/release/mn-park-scraper > public/index.html
       - run: tar czf artifact.tar public/
@@ -58,3 +58,15 @@ jobs:
         with:
           name: github-pages
           path: ${{ runner.temp }}/artifact.tar
+
+      - run: ls -lha
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        # If you're changing the branch from main,
+        # also change the `main` in `refs/heads/main`
+        # below accordingly.
+        # if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public 
