@@ -51,24 +51,22 @@
         <div class="flex items-center justify-center h-full w-full"></div>
       </div>
 
-      <div class="h-2 bg-gradient-to-r from-blue-500 to-green-500"></div>
-
       {% for park in parks %}
       <div class="p-6">
         <p class="text-lg font-bold">{{ park.name }}</p>
         <table class="table-fixed w-full">
           <thead>
             <tr>
-              <th class="p-2 text-sm">Site</th>
+              <th class="p-2 text-xs">Site</th>
               {% for date in dates_to_show %}
-              <th class="p-2 text-sm">{{ date|shortdate }}</th>
+              <th class="p-2 text-xs">{{ date|shortdate }}</th>
               {% endfor %}
             </tr>
           </thead>
           <tbody>
             {% for unit in park.units %}
             <tr>
-              <td class="text-sm justify-center items-center">
+              <td class="text-xs justify-center items-center">
                 {{ unit.short_name }}
               </td>
               {% for slice in unit.slices %}
