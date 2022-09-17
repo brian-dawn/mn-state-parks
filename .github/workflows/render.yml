@@ -6,7 +6,7 @@ on:
 
   workflow_dispatch:
 
-name: Render the page
+name: Render the Page
 jobs:
 
   render:

@@ -4,7 +4,7 @@ on:
     # Every month to ensure the artifact stays fresh.
     - cron: 0 0 1 * *
 
-name: build the artifact
+name: Compile
 jobs:
   build:
     name: Build
