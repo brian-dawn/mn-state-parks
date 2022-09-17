@@ -3,6 +3,7 @@ use std::collections::HashSet;
 use anyhow::{Context, Error};
 use askama::Template;
 use chrono::{Datelike, NaiveDate};
+use human_sort::compare;
 
 use crate::api::ParsedPark;
 
@@ -31,8 +32,20 @@ pub fn render(parks: &[ParsedPark]) -> Result<String, Error> {
 
     let dates_to_show = fill_in_dates(&dates_to_show).context("No dates")?;
 
+    let mut parks = parks.clone().to_vec();
+
+    // Sort the parks by name.
+    parks.sort_by(|a, b| a.name.cmp(&b.name));
+
+    // Sort the units by name.
+    for park in parks.iter_mut() {
+        park.units.sort_by(|a, b| compare(&a.short_name, &b.short_name));
+    }
+
+
+
     let index = IndexTemplate {
-        parks,
+        parks: &parks,
         dates_to_show: &dates_to_show,
     };
 
