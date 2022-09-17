@@ -1,0 +1,29 @@
+on: push
+name: build and deploy pages
+jobs:
+  build:
+    name: Deploy
+    runs-on: ubuntu-latest
+    # if: github.ref == 'refs/heads/main'
+    steps:
+
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --all-features
+
+      - run: git checkout HEAD^
+      - run: cargo run > public/index.html
+      - run: tar czf artifact.tar public/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
