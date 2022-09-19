@@ -287,11 +287,6 @@ pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
 
         if let Some(place) = place {
             for facility in place.selected_place.facilities.values() {
-                // Only show backpacking sites.
-                if !facility.name.to_ascii_lowercase().contains("backpack") {
-                    continue;
-                }
-
                 delay_requests().await;
 
                 eprintln!("\tfetching {}", facility.name);
