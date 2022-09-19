@@ -20,7 +20,9 @@ async fn main() -> Result<()> {
         let sites = api::fetch_all_campsites().await?;
 
         // Write out the cache.
-        let cache = Cache { parks: sites.clone() };
+        let cache = Cache {
+            parks: sites.clone(),
+        };
         let json = serde_json::to_string(&cache)?;
         std::fs::write("cache.json", json)?;
 

@@ -5,6 +5,31 @@ use chrono::Datelike;
 use rand::Rng;
 use serde::{Deserialize, Deserializer, Serialize};
 
+/// ALl the parks we will check for backpacking sites. We don't iterate
+/// all parks because most don't have backpacking sites and we don't want
+/// to spend too much time walking them.
+const ALLOWED_PARKS: &'static [&'static str] = &[
+    "Afton State Park",
+    "Bear Head Lake State Park",
+    "Cascade River State Park",
+    "Frontenac State Park",
+    "George H. Crosby Manitou State Park",
+    "Glacial Lakes State Park",
+    "Itasca State Park",
+    "Jay Cooke State Park",
+    "Lake Bronson State Park",
+    "Lake Maria State Park",
+    "Lake Vermilion-Soudan Underground Mine State Park",
+    "Maplewood State Park",
+    "Mille Lacs Kathio State Park",
+    "Myre-Big Island State Park",
+    "Savanna Portage State Park",
+    "Scenic State Park",
+    "Split Rock Lighthouse State Park",
+    "St. Croix State Park",
+    "Upper Sioux Agency State Park",
+];
+
 pub enum UnitType {
     Backpacking = 177,
     BikeIn = 176,
@@ -248,6 +273,11 @@ pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
 
     let parks = fetch_parks().await?;
     for park in parks.iter() {
+        // Most state parks don't have backpacking sites so skip them.
+        if !ALLOWED_PARKS.contains(&park.name.as_str()) {
+            eprintln!("skipping {}", park.name);
+            continue;
+        }
         eprintln!("fetching {} (id={})", park.name, park.place_id);
 
         let mut units = Vec::new();
@@ -257,9 +287,7 @@ pub async fn fetch_all_campsites() -> Result<Vec<ParsedPark>> {
 
         if let Some(place) = place {
             for facility in place.selected_place.facilities.values() {
-
-
-        delay_requests().await;
+                delay_requests().await;
 
                 eprintln!("\tfetching {}", facility.name);
                 let grid = fetch_facility(facility.facility_id.to_string().as_str()).await?;

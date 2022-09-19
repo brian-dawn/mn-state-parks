@@ -39,10 +39,9 @@ pub fn render(parks: &[ParsedPark]) -> Result<String, Error> {
 
     // Sort the units by name.
     for park in parks.iter_mut() {
-        park.units.sort_by(|a, b| compare(&a.short_name, &b.short_name));
+        park.units
+            .sort_by(|a, b| compare(&a.short_name, &b.short_name));
     }
-
-
 
     let index = IndexTemplate {
         parks: &parks,
